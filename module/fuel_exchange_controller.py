@@ -1,3 +1,4 @@
+import copy
 class FuelExchangeGameController(object):
     def __init__(self, field, crane_controller_list, fuel_list):
         self.field = field
@@ -71,7 +72,7 @@ class FuelExchangeController(object):
         self.field = field
         self.crane_controller_list = crane_controller_list
         self.fuel_list = fuel_list
-        self.score = 0
+        self.score = 100
     
     def main(self, repeat_num=10):
         for i in range(repeat_num):
@@ -85,22 +86,23 @@ class FuelExchangeController(object):
                 action_code = self.decide_action(actions, self.field)
                 crane_controller.do_action(action_code)
         
-    def decide_action(self, actions, field):
-        field.display()
-        while True:
-            try:
-                action_code = input("アクションコード: ").split(",")
-                if  [int(action_code[0]), int(action_code[1]), int(action_code[2])] in actions:
-                    return [int(action_code[0]), int(action_code[1]), int(action_code[2])]
-                else:
-            except ValueError:
+    # def decide_action(self, actions, field):
+    #     field.display()
+    #     while True:
+    #         try:
+    #             action_code = input("アクションコード: ").split(",")
+    #             if  [int(action_code[0]), int(action_code[1]), int(action_code[2])] in actions:
+    #                 return [int(action_code[0]), int(action_code[1]), int(action_code[2])]
+    #             else:
+    #         except ValueError:
 
     def scoring_field(self):
         self.score = 0
+        flg = False
         fuel_combs = []
-        F3_F3_vh_score = 100
-        F3_F3_dia_score = 50
-        F3_F2_vh_score = 10
+        F3_F3_vh_score = 20
+        F3_F3_dia_score = 10
+        F3_F2_vh_score = 0
 
         for i,fuel in enumerate(self.fuel_list):
             if fuel.state == 3:
@@ -111,11 +113,15 @@ class FuelExchangeController(object):
                         continue
                     if fuel2.location in vh_neighbor and [fuel,fuel2] not in fuel_combs:
                         if fuel2.state == 3:
-                            self.score = self.score + F3_F3_vh_score
+                            self.score = self.score - F3_F3_vh_score
                         if fuel2.state == 2:
-                            self.score = self.score + F3_F2_vh_score
-                        fuel_combs.append([fuel2,fuel])
+                            self.score = self.score - F3_F2_vh_score
+                            fuel_combs.append([fuel2,fuel])
                     if fuel2.location in dia_neighbor and [fuel,fuel2] not in fuel_combs:
-                        if fuel2.state == 3:
-                            self.score = self.score + F3_F3_dia_score
-                        fuel_combs.append([fuel2,fuel])
+                        if fuel2.state == 3:    
+                            self.score = self.score - F3_F3_dia_score
+                            fuel_combs.append([fuel2,fuel])
+        if self.score == 0:
+            self.score = 50
+            flg = True
+        return self.score,flg
