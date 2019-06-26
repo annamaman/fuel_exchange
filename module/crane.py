@@ -28,19 +28,14 @@ class Crane(object):
                 self.fuel.location[0] = copy.copy(self.location[0])
                 self.fuel.location[1] = copy.copy(self.location[1])
 
-# アクションコードの意味
-# [0,0,0] : 何もしない
-# [x,y,0] : [x,y]の方向にクレーンを動かす
-# [1,0,1] : クレーン直下の燃料を持ち上げる
-# [0,0,1] : 燃料を直下に下す
 class CraneController(object):
     def __init__(self, field, crane, fuel_list):
         self.field = field
         self.crane = crane
         self.fuel_list = fuel_list
     
-    def get_actions(self):
-        action_codes = [[0,0,0], [-1,0,-1]]
+    def get_action(self):
+        action_codes = [[0,0,0], [0,0,-1]]
         whole_map = self.field.get_whole_map()
         for vec in self.crane.moving_vec:           
             next_location = [self.crane.location[0] + vec[0], self.crane.location[1] + vec[1]]
@@ -51,24 +46,24 @@ class CraneController(object):
             if whole_map[next_location[0]][next_location[1]] == "S" or whole_map[next_location[0]][next_location[1]] == "F":              
                 action_codes.append([vec[0], vec[1], 0])
         if self.crane.fuel == None:
-            action_codes.remove([-1,0,-1])
+            action_codes.remove([0,0,-1])
         for fuel in self.fuel_list:
             if fuel.location == self.crane.location and self.crane.fuel == None:
-                action_codes.append([1,0,1])
-            if fuel.location == self.crane.location and [-1,0,-1] in action_codes:
-                action_codes.remove([-1,0,-1])
+                action_codes.append([0,0,1])
+            if fuel.location == self.crane.location and [0,0,-1] in action_codes:
+                action_codes.remove([0,0,-1])
         return action_codes
 
     def do_action(self, action_code):
         if action_code == [0,0,0]:
             return
-        elif action_code == [1,0,1]:
+        elif action_code == [0,0,1]:
             for fuel in self.fuel_list:
                 if fuel.location == self.crane.location:
                     self.crane.lift(fuel, self.fuel_list)
                     break
             return
-        elif action_code == [-1,0,-1] and self.crane.fuel is not None:
+        elif action_code == [0,0,-1] and self.crane.fuel is not None:
             self.crane.put(self.fuel_list)
         else:
             self.crane.move([action_code[0], action_code[1]])

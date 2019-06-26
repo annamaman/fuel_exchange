@@ -16,7 +16,7 @@ class Field(object):
         for line in field_map:
             print(line)
     
-    # コンピューター用
+    # クレーンコントローラー用
     def get_whole_map(self):        
         field_map = copy.deepcopy(self.map)
         for fuel in self.fuel_list:
@@ -45,4 +45,26 @@ class Field(object):
             else:
                 neighbor.append(next_location)
         return neighbor
-        
+
+    def get_state(self):
+        state = []
+        for crane in self.crane_list:
+            state.append(crane.location[0])
+            state.append(crane.location[1])
+            if crane.fuel is None:
+                state.append(0)
+            else:
+                state.append(1)
+        for fuel in self.fuel_list:
+            state.append(fuel.location[0])
+            state.append(fuel.location[1])
+            state.append(fuel.state)
+        for crane in self.crane_list:
+            if crane.fuel is not None:
+                state.append(crane.fuel.location[0])
+                state.append(crane.fuel.location[1])
+                state.append(crane.fuel.state)
+        return state          
+
+                
+
