@@ -1,34 +1,46 @@
 import random,copy,sys
-from module.fuel import Fuel
-from module.crane import Crane, CraneController
-from module.field import Field
-from module.fuel_exchange_controller import FuelExchangeController
 import numpy as np
 from matplotlib import pyplot
 
-
+import copy
 class QLearning_Solver(object):
     def __init__(self, fuel_exchange_controller):
         self.Qvalue = {}
-        self.field = fuel_exchange_controller.field
-        self.c_controller_list = fuel_exchange_controller.crane_controller_list
         self.f_controller = fuel_exchange_controller
-        self.alpha = 0.2
+        self.f_controller_ = copy.deepcopy(fuel_exchange_controller)
+        self.alpha = 0.6
         self.gamma  = 0.9
-        self.epsilon = 0.4
+        self.epsilon = 1
         self.steps = 0
         self.score = 0
+        self.list = []
 
-    def qlearn(self):
+    def qlearn(self, epoch, clear_time):
+        for episode in range(epoch):
+            play_time = self.game_play()
+            print(play_time)
+            self.list.append(play_time)
+            self.epsilon = self.epsilon - 0.1
+            if play_time <= clear_time:
+                sys.exit()
+                x = np.linspace(0,10,len(self.list))  #0から2πまでの範囲を100分割したnumpy配列
+                y = np.array(self.list)
+                pyplot.plot(x, y)
+                pyplot.show()
+            self.f_controller = copy.deepcopy(self.f_controller_)
+        x = np.linspace(0,10,len(self.list))  #0から2πまでの範囲を100分割したnumpy配列
+        y = np.array(self.list)
+        pyplot.plot(x, y)
+        pyplot.show()
+
+    def game_play(self):
         i = 0
         while True:
-            for c_controller in self.c_controller_list:
+            for c_controller in self.f_controller.crane_controller_list:
                 for j in range(c_controller.crane.moving_speed):
                     action = self.choose_action(c_controller)
-                    print(self.f_controller.field.display())
                     if self.update_Qvalue(c_controller, action):
-                        print(i)
-                        sys.exit()
+                        return i
             i += 1
                     # if i >= 10:
                     #     score_list.append(self.fuel_exchange_controller.score)
@@ -45,27 +57,27 @@ class QLearning_Solver(object):
                     #     i = 0
                     #     j += 1
                         # continue
-                # x = np.linspace(0,10,len(score_list))  #0から2πまでの範囲を100分割したnumpy配列
-                # y = np.array(score_list)
-                # pyplot.plot(x, y)
-                # pyplot.show()
+
           
                 # break
 
     def update_Qvalue(self, c_controller, action):
-        state, score, finish_flg = self.f_controller.step(action, c_controller)       
+        state, score, finish_flg = self.f_controller.step(action, c_controller)
+        # print(score)   
+        # print(state)
         Q_s_a = self.get_Qvalue(state, action)
-        print(score)
         Q_s_a_list = []
         for n_action in c_controller.get_action():
             c_controller.do_action(n_action)
-            state = self.f_controller.get_state()       
+            state = self.f_controller.get_state(c_controller)       
             Q_s_a_list.append(self.get_Qvalue(state, n_action))
             reverse_n_action = [-1*n_action[0], -1*n_action[1], -1*n_action[2]]
             c_controller.do_action(reverse_n_action)
         mQ_s_a = max(Q_s_a_list)
-
         q_value = Q_s_a + self.alpha * ( score +  self.gamma * mQ_s_a - Q_s_a )
+        # self.f_controller.field.display()
+        # print(score)
+        # print(q_value)
         self.set_Qvalue(state, action, q_value)
         return finish_flg
 
@@ -81,25 +93,25 @@ class QLearning_Solver(object):
         state = tuple(state)
         action = (action[0], action[1], action[2])
         self.Qvalue.setdefault(state,{})
+        # print(state)
         self.Qvalue[state][action] = q_value
 
     def choose_action(self, c_controller):
         actions = self.f_controller.get_action(c_controller)
-        if self.epsilon < random.random():
+        if self.epsilon > random.random():
             return random.choice(actions)
         else:
-            state = self.f_controller.get_state()
+            state = self.f_controller.get_state(c_controller)
             return self.choose_action_greedy(state, actions)
 
     def choose_action_greedy(self, state, actions):
         best_actions = []
-        max_q_value = -100
+        max_q_value = -1000000
         for a in actions:
             q_value = self.get_Qvalue(state, a)
             if q_value > max_q_value:
+                best_actions = [a,]
                 max_q_value = q_value
-        for a in actions:
-            q_value = self.get_Qvalue(state, a)
-            if q_value == max_q_value:
+            elif q_value == max_q_value:
                 best_actions.append(a)
         return random.choice(best_actions)

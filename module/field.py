@@ -46,24 +46,31 @@ class Field(object):
                 neighbor.append(next_location)
         return neighbor
 
-    def get_state(self):
+    def get_state(self, step, controller):
         state = []
+        tmp = []
         for crane in self.crane_list:
-            state.append(crane.location[0])
-            state.append(crane.location[1])
+            # state.append(crane.location[0])
+            # state.append(crane.location[1])
+            state.append(crane.location[0]*4+crane.location[1]-4)
             if crane.fuel is None:
                 state.append(0)
             else:
                 state.append(1)
+
         for fuel in self.fuel_list:
-            state.append(fuel.location[0])
-            state.append(fuel.location[1])
-            state.append(fuel.state)
+            # state.append(fuel.location[0])
+            # state.append(fuel.location[1])
+            # state.append(fuel.state)
+            tmp.append(fuel.location[0]*4+fuel.location[1]-4)
         for crane in self.crane_list:
             if crane.fuel is not None:
-                state.append(crane.fuel.location[0])
-                state.append(crane.fuel.location[1])
-                state.append(crane.fuel.state)
+        #         state.append(crane.fuel.location[0])
+        #         state.append(crane.fuel.location[1])
+        #         state.append(crane.fuel.state)
+                tmp.append(crane.location[0]*4+crane.location[1]-4)
+        tmp.sort()       
+        state.extend(tmp)
         return state          
 
                 
