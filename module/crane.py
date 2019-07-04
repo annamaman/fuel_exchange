@@ -35,7 +35,7 @@ class CraneController(object):
         self.fuel_list = fuel_list
     
     def get_action(self):
-        action_codes = [[0,0,0], [0,0,-1]]
+        action_codes = [[0,0,-1]]
         whole_map = self.field.get_whole_map()
         for vec in self.crane.moving_vec:           
             next_location = [self.crane.location[0] + vec[0], self.crane.location[1] + vec[1]]

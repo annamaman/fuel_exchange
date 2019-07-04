@@ -52,7 +52,7 @@ class Field(object):
         for crane in self.crane_list:
             # state.append(crane.location[0])
             # state.append(crane.location[1])
-            state.append(crane.location[0]*4+crane.location[1]-4)
+            state.append(crane.location[0]*3+crane.location[1]-3)
             if crane.fuel is None:
                 state.append(0)
             else:
@@ -62,13 +62,13 @@ class Field(object):
             # state.append(fuel.location[0])
             # state.append(fuel.location[1])
             # state.append(fuel.state)
-            tmp.append(fuel.location[0]*4+fuel.location[1]-4)
+            tmp.append(fuel.location[0]*3+fuel.location[1]-3)
         for crane in self.crane_list:
             if crane.fuel is not None:
         #         state.append(crane.fuel.location[0])
         #         state.append(crane.fuel.location[1])
         #         state.append(crane.fuel.state)
-                tmp.append(crane.location[0]*4+crane.location[1]-4)
+                tmp.append(crane.location[0]*3+crane.location[1]-3)
         tmp.sort()       
         state.extend(tmp)
         return state          

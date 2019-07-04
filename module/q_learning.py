@@ -8,7 +8,7 @@ class QLearning_Solver(object):
         self.Qvalue = {}
         self.f_controller = fuel_exchange_controller
         self.f_controller_ = copy.deepcopy(fuel_exchange_controller)
-        self.alpha = 0.6
+        self.alpha = 0.2
         self.gamma  = 0.9
         self.epsilon = 1
         self.steps = 0
@@ -18,9 +18,9 @@ class QLearning_Solver(object):
     def qlearn(self, epoch, clear_time):
         for episode in range(epoch):
             play_time = self.game_play()
-            print(play_time)
+            print("episode : " + str(episode) + "  playtime : " + str(play_time))
             self.list.append(play_time)
-            self.epsilon = self.epsilon - 0.1
+            self.epsilon = 1 - episode/epoch
             if play_time <= clear_time:
                 sys.exit()
                 x = np.linspace(0,10,len(self.list))  #0から2πまでの範囲を100分割したnumpy配列
@@ -62,23 +62,36 @@ class QLearning_Solver(object):
                 # break
 
     def update_Qvalue(self, c_controller, action):
-        state, score, finish_flg = self.f_controller.step(action, c_controller)
+        state = self.f_controller.get_state(c_controller)
+        next_state, score, finish_flg = self.f_controller.step(action, c_controller)
+        # self.f_controller.field.display()
         # print(score)   
         # print(state)
         Q_s_a = self.get_Qvalue(state, action)
         Q_s_a_list = []
+        # print("-------------------------------")
+        # print( c_controller.get_action())
         for n_action in c_controller.get_action():
+            # print("---------------------")
+            # print(n_action)
+            # print(self.get_Qvalue(state, n_action))
+            # self.f_controller.field.display()
+            # print("          ↓")
             c_controller.do_action(n_action)
-            state = self.f_controller.get_state(c_controller)       
-            Q_s_a_list.append(self.get_Qvalue(state, n_action))
+            state_ = self.f_controller.get_state(c_controller)       
+            Q_s_a_list.append(self.get_Qvalue(state_, n_action))
+            # self.f_controller.field.display()
             reverse_n_action = [-1*n_action[0], -1*n_action[1], -1*n_action[2]]
             c_controller.do_action(reverse_n_action)
+
         mQ_s_a = max(Q_s_a_list)
+        # print(mQ_s_a)
+        if finish_flg:
+            mQ_s_a = 0
         q_value = Q_s_a + self.alpha * ( score +  self.gamma * mQ_s_a - Q_s_a )
         # self.f_controller.field.display()
-        # print(score)
-        # print(q_value)
         self.set_Qvalue(state, action, q_value)
+        # print(self.get_Qvalue(state, action))
         return finish_flg
 
     def get_Qvalue(self, state, action):
@@ -87,7 +100,7 @@ class QLearning_Solver(object):
         try:
             return self.Qvalue[state][action]
         except KeyError:
-            return 0.0
+            return -1
 
     def set_Qvalue(self, state, action, q_value):
         state = tuple(state)
@@ -95,6 +108,7 @@ class QLearning_Solver(object):
         self.Qvalue.setdefault(state,{})
         # print(state)
         self.Qvalue[state][action] = q_value
+
 
     def choose_action(self, c_controller):
         actions = self.f_controller.get_action(c_controller)
@@ -110,8 +124,10 @@ class QLearning_Solver(object):
         for a in actions:
             q_value = self.get_Qvalue(state, a)
             if q_value > max_q_value:
-                best_actions = [a,]
                 max_q_value = q_value
-            elif q_value == max_q_value:
+        for a in actions:
+            q_value = self.get_Qvalue(state, a)
+            if q_value == max_q_value:
                 best_actions.append(a)
+
         return random.choice(best_actions)

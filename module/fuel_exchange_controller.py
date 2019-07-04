@@ -9,8 +9,7 @@ class FuelExchangeController(object):
 
     def step(self, action, crane_controller):
         self.step_num += 1
-        crane_controller.do_action(action)
-        score, finish_flg = self.get_reward()
+        score, finish_flg = self.get_reward(action, crane_controller)
         state = self.get_state(crane_controller)
         return state, score, finish_flg
     
@@ -20,15 +19,23 @@ class FuelExchangeController(object):
     def get_action(self, crane_controller):
         return crane_controller.get_action()
 
-    def get_reward(self):
-        clear_score = 0
-        F3_F3_vh_score = -1 * self.step_num
-        F3_F3_dia_score = -1 * self.step_num
+    def get_reward(self, action, crane_controller):
+        score_before, a = self.get_score()
+        crane_controller.do_action(action)
+        score_after, finish_flg = self.get_score()
+        reward = (2 * score_after - score_before)/100
+        reward = reward - 0.1
+        return reward, finish_flg
+
+
+    def get_score(self):
+        F3_F3_vh_score = -20
+        F3_F3_dia_score = -20
         F3_F2_vh_score = 0
 
-        score = clear_score        
-        finish_flg = False
+        score = 50
         fuel_combs = []
+        clear_judge = True
 
         for i,fuel in enumerate(self.fuel_list):
             if fuel.state == 3:
@@ -40,20 +47,21 @@ class FuelExchangeController(object):
                     if fuel2.location in vh_neighbor and [fuel,fuel2] not in fuel_combs:
                         if fuel2.state == 3:
                             score = score + F3_F3_vh_score
+                            clear_judge = False
                         if fuel2.state == 2:
                             score = score + F3_F2_vh_score
+                            clear_judge = False
                             fuel_combs.append([fuel2,fuel])
                     if fuel2.location in dia_neighbor and [fuel,fuel2] not in fuel_combs:
                         if fuel2.state == 3:    
                             score = score + F3_F3_dia_score
+                            clear_judge = False
                             fuel_combs.append([fuel2,fuel])
-        if score == clear_score:
-            finish_flg = True
-            score = 10000000
+        if clear_judge:
             for crane_controller in self.crane_controller_list:
                 if crane_controller.crane.fuel is not None:
-                    finish_flg = False
-                    score = -1 * self.step_num
-        
-        # score = -1 * self.step_num
-        return score, finish_flg
+                    clear_judge = False
+                else:
+                    score = score + 10000
+
+        return score, clear_judge
