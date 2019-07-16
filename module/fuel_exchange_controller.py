@@ -1,52 +1,41 @@
+import copy
+
 class FuelExchangeController(object):
     def __init__(self, field, crane_controller_list, fuel_list):
         self.field = field
         self.crane_controller_list = crane_controller_list
         self.fuel_list = fuel_list
-        self.score = 0
+        self.step_num = 0
+
+    def step(self, action, crane_controller):
+        self.step_num += 1
+        score, finish_flg = self.get_reward(action, crane_controller)
+        state = self.get_state(crane_controller)
+        return state, score, finish_flg
     
-    def main(self, repeat_num=10):
-        print("これから" + str(repeat_num) + "回試行します。")
-        for i in range(repeat_num):
-            print(str(i+1) + "巡目")
-            self.go_next()
-            self.scoring_field()
-            print("")
-            print(str(i+1) + "巡目のスコア: " + str(self.score))
-            print("-------------------------------------------------------------------------")
-        print("最終スコアは " + str(self.score) + " です。")
+    def get_state(self, controller):
+        return self.field.get_state(self.step_num, controller)
 
-    def go_next(self):
-        for crane_controller in self.crane_controller_list:
-            print("")
-            print(crane_controller.crane.name + "のターン")             
-            for j in range(crane_controller.crane.moving_speed):
-                print(str(j+1) + "回目の行動")
-                actions = crane_controller.get_actions()
-                action_code = self.decide_action(actions, self.field)
-                print("")
-                crane_controller.do_action(action_code)
-        
-    def decide_action(self, actions, field):
-        field.display()
-        while True:
-            try:
-                print("")
-                print("可能なアクション: " + str(actions))
-                action_code = input("アクションコード: ").split(",")
-                if  [int(action_code[0]), int(action_code[1]), int(action_code[2])] in actions:
-                    return [int(action_code[0]), int(action_code[1]), int(action_code[2])]
-                else:
-                    print("アクションコードは可能なアクションの中から選択してください。")
-            except ValueError:
-                print("x,y,z の形式で入力してください。")
+    def get_action(self, crane_controller):
+        return crane_controller.get_action()
 
-    def scoring_field(self):
-        self.score = 0
+    def get_reward(self, action, crane_controller):
+        score_before, a = self.get_score()
+        crane_controller.do_action(action)
+        score_after, finish_flg = self.get_score()
+        reward = (2 * score_after - score_before)/100
+        reward = reward - 0.1
+        return reward, finish_flg
+
+
+    def get_score(self):
+        F3_F3_vh_score = -20
+        F3_F3_dia_score = -20
+        F3_F2_vh_score = 0
+
+        score = 50
         fuel_combs = []
-        F3_F3_vh_score = 100
-        F3_F3_dia_score = 50
-        F3_F2_vh_score = 10
+        clear_judge = True
 
         for i,fuel in enumerate(self.fuel_list):
             if fuel.state == 3:
@@ -57,11 +46,22 @@ class FuelExchangeController(object):
                         continue
                     if fuel2.location in vh_neighbor and [fuel,fuel2] not in fuel_combs:
                         if fuel2.state == 3:
-                            self.score = self.score + F3_F3_vh_score
+                            score = score + F3_F3_vh_score
+                            clear_judge = False
                         if fuel2.state == 2:
-                            self.score = self.score + F3_F2_vh_score
-                        fuel_combs.append([fuel2,fuel])
+                            score = score + F3_F2_vh_score
+                            clear_judge = False
+                            fuel_combs.append([fuel2,fuel])
                     if fuel2.location in dia_neighbor and [fuel,fuel2] not in fuel_combs:
-                        if fuel2.state == 3:
-                            self.score = self.score + F3_F3_dia_score
-                        fuel_combs.append([fuel2,fuel])
+                        if fuel2.state == 3:    
+                            score = score + F3_F3_dia_score
+                            clear_judge = False
+                            fuel_combs.append([fuel2,fuel])
+        if clear_judge:
+            for crane_controller in self.crane_controller_list:
+                if crane_controller.crane.fuel is not None:
+                    clear_judge = False
+                else:
+                    score = score + 10000
+
+        return score, clear_judge
