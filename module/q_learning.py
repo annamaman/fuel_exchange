@@ -14,33 +14,46 @@ class QLearning_Solver(object):
         self.steps = 0
         self.score = 0
         self.list = []
+        
 
     def qlearn(self, epoch, clear_time):
+        min_play_time = 1000
+        i = 0
+        min_action_list = []
         for episode in range(epoch):
-            play_time = self.game_play()
+            play_time, action_list = self.game_play()
             print("episode : " + str(episode) + "  playtime : " + str(play_time))
+            # print(action_list)
             self.list.append(play_time)
+            if min_play_time > play_time:
+                min_play_time = play_time
+                i = episode
+                min_action_list = action_list
+
             self.epsilon = 1 - episode/epoch
             if play_time <= clear_time:
                 sys.exit()
-                x = np.linspace(0,10,len(self.list))  #0から2πまでの範囲を100分割したnumpy配列
+                x = np.linspace(0,epoch,len(self.list))  #0から2πまでの範囲を100分割したnumpy配列
                 y = np.array(self.list)
                 pyplot.plot(x, y)
                 pyplot.show()
             self.f_controller = copy.deepcopy(self.f_controller_)
-        x = np.linspace(0,10,len(self.list))  #0から2πまでの範囲を100分割したnumpy配列
+        print("episode : " + str(i) + "  playtime : " + str(min_play_time) + "  action_list : " + str(min_action_list))
+        x = np.linspace(0,len(self.list),len(self.list))  #0から2πまでの範囲を100分割したnumpy配列
         y = np.array(self.list)
         pyplot.plot(x, y)
         pyplot.show()
 
     def game_play(self):
         i = 0
+        action_list = []
         while True:
             for c_controller in self.f_controller.crane_controller_list:
                 for j in range(c_controller.crane.moving_speed):
                     action = self.choose_action(c_controller)
+                    action_list.append(action)
                     if self.update_Qvalue(c_controller, action):
-                        return i
+                        return i, action_list
             i += 1
                     # if i >= 10:
                     #     score_list.append(self.fuel_exchange_controller.score)
