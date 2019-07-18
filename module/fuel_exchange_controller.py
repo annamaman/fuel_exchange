@@ -24,7 +24,7 @@ class FuelExchangeController(object):
         crane_controller.do_action(action)
         score_after, finish_flg = self.get_score()
         reward = (score_after - score_before)/100
-        reward = reward - 0.3
+        reward = reward - 0.4
         return reward, finish_flg
 
 
@@ -62,6 +62,6 @@ class FuelExchangeController(object):
                 if crane_controller.crane.fuel is not None:
                     clear_judge = False
                 else:
-                    score = score + 100000
+                    score = score + 10000
 
         return score, clear_judge

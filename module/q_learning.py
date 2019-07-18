@@ -14,21 +14,22 @@ class QLearning_Solver(object):
         self.steps = 0
         self.score = 0
         self.list = []
+        self.min_play_time = 1000
+        self.i = 0
+        self.min_action_list = []
         
 
     def qlearn(self, epoch, clear_time):
-        min_play_time = 1000
-        i = 0
-        min_action_list = []
+
         for episode in range(epoch):
             play_time, action_list = self.game_play()
             print("episode : " + str(episode) + "  playtime : " + str(play_time))
-            # print(action_list)
+
             self.list.append(play_time)
-            if min_play_time > play_time:
-                min_play_time = play_time
-                i = episode
-                min_action_list = action_list
+            if self.min_play_time > play_time:
+                self.min_play_time = play_time
+                self.i = episode
+                self.min_action_list = action_list
 
             self.epsilon = 1 - episode/epoch
             if play_time <= clear_time:
@@ -38,7 +39,7 @@ class QLearning_Solver(object):
                 pyplot.plot(x, y)
                 pyplot.show()
             self.f_controller = copy.deepcopy(self.f_controller_)
-        print("episode : " + str(i) + "  playtime : " + str(min_play_time) + "  action_list : " + str(min_action_list))
+        print("episode : " + str(self.i) + "  playtime : " + str(self.min_play_time) + "  action_list : " + str(self.min_action_list))
         x = np.linspace(0,len(self.list),len(self.list))  #0から2πまでの範囲を100分割したnumpy配列
         y = np.array(self.list)
         pyplot.plot(x, y)
